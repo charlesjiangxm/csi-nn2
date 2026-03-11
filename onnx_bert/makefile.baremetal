@@ -1,0 +1,154 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0.
+
+ROOT_DIR := $(abspath ..)
+TOOLBIN ?= /home/charlesjiangxm/xuantie/Xuantie-900-gcc-linux-6.6.36-glibc-x86_64-V3.3.0/bin
+USE_CORE ?= 8
+ONNX_BERT_BAREMETAL_VARIANT ?= rvv
+ONNX_BERT_TVM_SRCS ?=
+ONNX_BERT_TVM_CPPFLAGS ?=
+
+ifeq ($(ONNX_BERT_BAREMETAL_VARIANT),rvm_tvm)
+BUILD_DIR ?= build_baremetal_rvm_tvm
+SHL_BUILD_DIR ?= $(ROOT_DIR)/rvm_elf_build
+SHL_LIB ?= $(SHL_BUILD_DIR)/libshl_rvm_rtos.a
+SHL_CMAKE_FLAGS ?= -DCONFIG_BUILD_RISCV_ELF_RVM=ON
+SHL_BUILD_TARGET ?= rvm_elf_static
+ONNX_BERT_BASE_API ?= CSINN_RVM
+else
+BUILD_DIR ?= build_baremetal
+SHL_BUILD_DIR ?= $(ROOT_DIR)/rvv_elf_build
+SHL_LIB ?= $(SHL_BUILD_DIR)/libshl_rvv_rtos.a
+SHL_CMAKE_FLAGS ?= -DCONFIG_BUILD_RISCV_ELF_RVV=ON
+SHL_BUILD_TARGET ?= rvv_elf_static
+ONNX_BERT_BASE_API ?= CSINN_RVV
+endif
+
+CC := $(TOOLBIN)/riscv64-unknown-linux-gnu-gcc
+CXX := $(TOOLBIN)/riscv64-unknown-linux-gnu-g++
+OBJCOPY := $(TOOLBIN)/riscv64-unknown-linux-gnu-objcopy
+SIZE := $(TOOLBIN)/riscv64-unknown-linux-gnu-size
+
+DATA_DIR := $(BUILD_DIR)/embedded
+TARGET := $(BUILD_DIR)/onnx_bert_baremetal.elf
+LINKER_SCRIPT ?= lib/linker_xiaohui.lcf
+
+ARCH_FLAGS := -mcpu=c907fdvm -mabi=lp64d -mcmodel=medany
+COMMON_FLAGS := $(ARCH_FLAGS) -O2 -g -ffp-contract=off -ffunction-sections -fdata-sections
+CPPFLAGS := -DONNX_BERT_BAREMETAL -DONNX_BERT_BASE_API=$(ONNX_BERT_BASE_API) -DONNX_BERT_THREAD_NUM=1 \
+	-DONNX_BERT_UART0_BASE_ADDR=0x1900d000UL \
+	$(ONNX_BERT_TVM_CPPFLAGS) \
+	-I$(ROOT_DIR)/include \
+	-I$(ROOT_DIR)/include/csinn \
+	-I$(ROOT_DIR)/include/shl_public \
+	-I$(ROOT_DIR)/module \
+	-I$(ROOT_DIR)/onnx_bert/lib \
+	-I$(ROOT_DIR)/onnx_bert/lib/clib \
+	-I$(ROOT_DIR)/onnx_bert/lib/newlib_wrap
+CFLAGS := $(COMMON_FLAGS) $(CPPFLAGS)
+LDFLAGS := $(ARCH_FLAGS) -T $(LINKER_SCRIPT) -static -nostdlib -no-pie -Wl,--gc-sections
+LDLIBS := -Wl,--start-group $(SHL_LIB) -lm -lgcc -Wl,--end-group
+
+APP_SRCS := main.c model.c tvm_registration.c $(ONNX_BERT_TVM_SRCS)
+STARTUP_SRCS := \
+	lib/crt0.S \
+	lib/ipmc_init.S \
+	lib/core_cp0.s \
+	lib/core_ifu.s \
+	lib/core_l2c.s \
+	lib/core_lsu.s \
+	lib/core_mmu.s \
+	lib/core_plic.s \
+	lib/core_t_extension.s \
+	lib/core_vec.s
+SUPPORT_SRCS := lib/clib/uart.c $(wildcard lib/newlib_wrap/*.c)
+
+APP_OBJS := $(addprefix $(BUILD_DIR)/,$(APP_SRCS:.c=.o))
+STARTUP_OBJS := $(addprefix $(BUILD_DIR)/,$(STARTUP_SRCS:.S=.o))
+STARTUP_OBJS := $(STARTUP_OBJS:.s=.o)
+SUPPORT_OBJS := $(addprefix $(BUILD_DIR)/,$(SUPPORT_SRCS:.c=.o))
+
+DATA_BINS := \
+	$(DATA_DIR)/model_params.bin \
+	$(DATA_DIR)/input_ids.bin \
+	$(DATA_DIR)/input_mask.bin \
+	$(DATA_DIR)/segment_ids.bin \
+	$(DATA_DIR)/gold_output0.bin \
+	$(DATA_DIR)/gold_output1.bin
+DATA_OBJS := $(DATA_BINS:.bin=.o)
+
+.PHONY: all clean size shl-lib rvm_tvm
+
+all: $(TARGET)
+
+rvm_tvm:
+	$(MAKE) -f $(lastword $(MAKEFILE_LIST)) ONNX_BERT_BAREMETAL_VARIANT=rvm_tvm all
+
+shl-lib:
+	cmake -S $(ROOT_DIR) -B $(SHL_BUILD_DIR) \
+		$(SHL_CMAKE_FLAGS) \
+		-DCONFIG_CUSTOM_SOURCE_SELECT=OFF \
+		-DCONFIG_GRAPH_REFERENCE_TVMGEN=ON \
+		-DCONFIG_USE_COMPILER_PATH=ON \
+		-DCONFIG_USE_SHL_DEBUG=OFF \
+		-DCONFIG_SHL_LAYER_BENCHMARK=OFF \
+		-DCONFIG_SHL_TRACE=OFF \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_C_COMPILER=$(CC) \
+		-DCMAKE_CXX_COMPILER=$(CXX) \
+		-DCMAKE_ASM_COMPILER=$(CC)
+	$(MAKE) -C $(SHL_BUILD_DIR) -j$(USE_CORE) $(SHL_BUILD_TARGET)
+
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -std=c99 -c -o $@ $<
+
+$(BUILD_DIR)/%.o: %.S
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(BUILD_DIR)/%.o: %.s
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(DATA_DIR)/model_params.bin: model.params
+	@mkdir -p $(dir $@)
+	cp $< $@
+
+$(DATA_DIR)/input_ids.bin: input_ids.0.bin
+	@mkdir -p $(dir $@)
+	cp $< $@
+
+$(DATA_DIR)/input_mask.bin: input_mask.1.bin
+	@mkdir -p $(dir $@)
+	cp $< $@
+
+$(DATA_DIR)/segment_ids.bin: segment_ids.2.bin
+	@mkdir -p $(dir $@)
+	cp $< $@
+
+$(DATA_DIR)/gold_output0.bin: input_ids.0.bin_output0_1_384.txt
+	@mkdir -p $(dir $@)
+	python -c "from pathlib import Path; import struct, sys; src, dst = sys.argv[1], sys.argv[2]; values = [float(line.strip()) for line in Path(src).read_text().splitlines() if line.strip()]; Path(dst).write_bytes(struct.pack('<%sf' % len(values), *values))" "$<" "$@"
+
+$(DATA_DIR)/gold_output1.bin: input_ids.0.bin_output1_1_384.txt
+	@mkdir -p $(dir $@)
+	python -c "from pathlib import Path; import struct, sys; src, dst = sys.argv[1], sys.argv[2]; values = [float(line.strip()) for line in Path(src).read_text().splitlines() if line.strip()]; Path(dst).write_bytes(struct.pack('<%sf' % len(values), *values))" "$<" "$@"
+
+$(DATA_DIR)/%.o: $(DATA_DIR)/%.bin
+	@mkdir -p $(dir $@)
+	cd $(DATA_DIR) && $(OBJCOPY) -I binary -O elf64-littleriscv -B riscv \
+		--rename-section .data=.rodata.onnx_bert.embedded,alloc,load,readonly,data,contents \
+		$(notdir $<) $(notdir $@)
+
+$(TARGET): shl-lib $(APP_OBJS) $(STARTUP_OBJS) $(SUPPORT_OBJS) $(DATA_OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(STARTUP_OBJS) $(APP_OBJS) $(SUPPORT_OBJS) $(DATA_OBJS) $(LDLIBS)
+
+size: $(TARGET)
+	$(SIZE) $(TARGET)
+
+clean:
+	rm -rf build_baremetal build_baremetal_rvm_tvm

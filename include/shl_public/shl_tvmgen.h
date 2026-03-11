@@ -26,12 +26,14 @@
 
 #include "shl_utils.h"
 
+typedef int32_t (*shl_tvmgen_func)();
+
 struct shl_tvmgen_name_func {
-    char *name;
-    int (*ptr)();
+    const char *name;
+    shl_tvmgen_func ptr;
     enum csinn_optimize_method_enum opt_method;
 };
 
-int shl_tvmgen_map_reg(struct shl_tvmgen_name_func *map, int size);
+int shl_tvmgen_map_reg(const struct shl_tvmgen_name_func *map, int size);
 
 #endif  // INCLUDE_PUBLIC_SHL_TVMGEN_H_

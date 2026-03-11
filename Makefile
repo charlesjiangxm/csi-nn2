@@ -19,6 +19,9 @@ nn2_c906_so:
 nn2_c906_elf:
 	mkdir -p c906_elf_build; cd c906_elf_build; cmake ../ -DCONFIG_BUILD_RISCV_ELF_C906=ON -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}/c906/; make -j${USE_CORE}; make install; cd -
 
+nn2_rvm_elf:
+	mkdir -p rvm_elf_build; cd rvm_elf_build; cmake ../ -DCONFIG_BUILD_RISCV_ELF_RVM=ON -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}/rvm_elf/; make -j${USE_CORE}; make install; cd -
+
 nn2_rvm:
 	mkdir -p rvm_build; cd rvm_build; cmake ../ -DCONFIG_BUILD_RISCV_RVM=ON -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}/rvm/; make -j${USE_CORE}; make install; cd -
 

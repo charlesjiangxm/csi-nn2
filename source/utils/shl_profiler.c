@@ -487,4 +487,10 @@ void shl_trace_duration_end(struct shl_trace *trace, const char *name,
     // update
     shl_trace_insert_event(trace, event);
 }
+#else
+void shl_trace_move_events(struct shl_trace *from_trace, struct shl_trace *to_trace)
+{
+    (void)from_trace;
+    (void)to_trace;
+}
 #endif

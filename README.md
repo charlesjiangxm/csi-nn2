@@ -85,6 +85,42 @@ After copying it to the development board with C906 CPU [such as D1], execute:
 
 NOTE: Original mobilenetv1's every conv2d has one BN(batch norm), but the example assumes BN had been fused into conv2d。About how to use deployment tools to fuse BN, and emit right weight float16 value, can reference [HHB](https://www.yuque.com/za4k4z/kvkcoh).
 
+# Build onnx_bert Bare-metal
+
+The in-repo `onnx_bert` example provides bare-metal RVV and RVM + TVM build flows.
+
+The large `onnx_bert/bert_small_int32_input.onnx` and `onnx_bert/model.params` assets are hosted outside Git. Download them into `onnx_bert/` before building:
+
+```
+./onnx_bert/download_assets.sh
+```
+
+RVV build command:
+
+```
+cd csi-nn2
+make -C onnx_bert -f makefile.baremetal
+```
+
+`onnx_bert/build_baremetal/onnx_bert_baremetal.elf` will be generated after completion.
+
+RVM + TVM build command:
+
+```
+cd csi-nn2
+make -C onnx_bert -f makefile.baremetal rvm_tvm
+```
+
+Equivalent command:
+
+```
+make -C onnx_bert -f makefile.baremetal ONNX_BERT_BAREMETAL_VARIANT=rvm_tvm
+```
+
+`onnx_bert/build_baremetal_rvm_tvm/onnx_bert_baremetal.elf` will be generated after completion.
+
+For the RVM + TVM flow, optional external TVM-generated sources can be passed by `ONNX_BERT_TVM_SRCS` and `ONNX_BERT_TVM_CPPFLAGS`. For full bare-metal details, reference `onnx_bert/BAREMETAL_C907_GUIDE.md`.
+
 # Resources
 
 - [XuanTie Open Chip Community](https://xrvm.com/)

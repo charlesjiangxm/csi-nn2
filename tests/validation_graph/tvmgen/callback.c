@@ -20,6 +20,10 @@
 #include "shl_gref.h"
 #include "tvmgen/shl_tvmgen.h"
 
+#ifndef TVMGEN_TEST_BASE_API
+#define TVMGEN_TEST_BASE_API CSINN_C906
+#endif
+
 static int reg_func_in = 0;
 
 int32_t conv2d_conv1_0_fuse_multiply_1_fuse_add_conv1_bn_PART_0_2___tvm_main__(
@@ -46,7 +50,7 @@ void run_model()
     struct csinn_session *sess = csinn_alloc_session();
     sess->base_run_mode = CSINN_RM_CPU_GRAPH;
     sess->model.save_mode = CSINN_RUN_ONLY;
-    sess->base_api = CSINN_C906;
+    sess->base_api = TVMGEN_TEST_BASE_API;
     sess->base_dtype = CSINN_DTYPE_FLOAT32;
     sess->dynamic_shape = CSINN_FALSE;
     csinn_session_init(sess);
@@ -166,6 +170,7 @@ int test1()
     register_functions();
     run_model();
 
+    /* This smoke test only promotes the fused conv node onto the TVMGEN path. */
     if (reg_func_in == 1) {
         printf("Test1 sucessfully.\n");
         return 0;

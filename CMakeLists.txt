@@ -15,9 +15,15 @@ if (CONFIG_CUSTOM_SOURCE_SELECT)
     add_definitions(-DSHL_MCONF_CONFIG)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 else()
-    set(CONFIG_USE_SHL_DEBUG ON)
-    set(CONFIG_SHL_LAYER_BENCHMARK ON)
-    set(CONFIG_SHL_TRACE ON)
+    if (NOT DEFINED CONFIG_USE_SHL_DEBUG)
+        set(CONFIG_USE_SHL_DEBUG ON)
+    endif()
+    if (NOT DEFINED CONFIG_SHL_LAYER_BENCHMARK)
+        set(CONFIG_SHL_LAYER_BENCHMARK ON)
+    endif()
+    if (NOT DEFINED CONFIG_SHL_TRACE)
+        set(CONFIG_SHL_TRACE ON)
+    endif()
 endif()
 
 file (STRINGS "version" SHL_VERSION)
@@ -63,11 +69,12 @@ endif()
 
 if(CONFIG_BUILD_RISCV_RVM)
     # build rvm a
+    set(CONFIG_GRAPH_REFERENCE_TVMGEN ON)
     include(cmake/rules.cmake)
     LIST(APPEND RVM_LST ${NN2_SRCS} ${REF_SRCS} ${GREF_SRCS} ${THEAD_RVV_SRCS} ${THEAD_MATRIX_SRCS} ${RVM_SRCS})
     add_library(rvm_static STATIC ${RVM_LST})
     SET_TARGET_PROPERTIES(rvm_static PROPERTIES OUTPUT_NAME "shl_rvm")
-    set(RVM_BUILD_FLAGS -ffp-contract=off -march=rv64gcv_zfh_xtheadc_xtheadvdot_xtheadmatrix -mabi=lp64d -DSHL_BUILD_RVM -DSHL_BUILD_REF -DSHL_BUILD_GREF -DSHL_BUILD_RVV)
+    set(RVM_BUILD_FLAGS -ffp-contract=off -march=rv64gcv_zfh_zvfh_xtheadc_xtheadvdot_xtheadmatrix -mabi=lp64d -DSHL_BUILD_RVM -DSHL_BUILD_REF -DSHL_BUILD_GREF -DSHL_BUILD_RVV)
     target_compile_options(rvm_static PRIVATE ${RVM_BUILD_FLAGS})
 
     install(TARGETS rvm_static DESTINATION lib)
@@ -123,6 +130,32 @@ if(CONFIG_BUILD_RISCV_ELF_C906)
     target_compile_options(c906_elf_static PRIVATE ${C906_BUILD_FLAGS})
 
     install(TARGETS c906_elf_static DESTINATION lib)
+endif()
+
+if(CONFIG_BUILD_RISCV_ELF_RVV)
+    # build rvv elf a
+    include(cmake/rules.cmake)
+    LIST(APPEND RVV_ELF_LST ${NN2_SRCS} ${REF_SRCS} ${GREF_SRCS} ${THEAD_RVV_SRCS})
+    add_library(rvv_elf_static STATIC ${RVV_ELF_LST})
+    SET_TARGET_PROPERTIES(rvv_elf_static PROPERTIES OUTPUT_NAME "shl_rvv_rtos")
+    set(RVV_ELF_BUILD_FLAGS -ffp-contract=off -march=rv64gcv_zfh_zvfh_xtheadc_xtheadvdot_xtheadmatrix -mabi=lp64d -mcmodel=medany -DSHL_BUILD_RVV -DSHL_BUILD_REF -DSHL_BUILD_GREF -DSHL_BUILD_RTOS)
+    target_compile_options(rvv_elf_static PRIVATE ${RVV_ELF_BUILD_FLAGS})
+
+    install(TARGETS rvv_elf_static DESTINATION lib)
+endif()
+
+if(CONFIG_BUILD_RISCV_ELF_RVM)
+    # build rvm elf a
+    set(CONFIG_GRAPH_REFERENCE_TVMGEN ON)
+    include(cmake/rules.cmake)
+    LIST(APPEND RVM_ELF_LST ${NN2_SRCS} ${REF_SRCS} ${GREF_SRCS} ${THEAD_RVV_SRCS}
+         source/thead_matrix/setup.c source/thead_matrix/utils.c)
+    add_library(rvm_elf_static STATIC ${RVM_ELF_LST})
+    SET_TARGET_PROPERTIES(rvm_elf_static PROPERTIES OUTPUT_NAME "shl_rvm_rtos")
+    set(RVM_ELF_BUILD_FLAGS -ffp-contract=off -march=rv64gcv_zfh_zvfh_xtheadc_xtheadvdot_xtheadmatrix -mabi=lp64d -mcmodel=medany -DSHL_BUILD_RVM -DSHL_BUILD_REF -DSHL_BUILD_GREF -DSHL_BUILD_RTOS -DSHL_BUILD_RVV -DSHL_RVM_ELF_FALLBACK_ONLY)
+    target_compile_options(rvm_elf_static PRIVATE ${RVM_ELF_BUILD_FLAGS})
+
+    install(TARGETS rvm_elf_static DESTINATION lib)
 endif()
 
 if(CONFIG_BUILD_RISCV_ELF_E907)

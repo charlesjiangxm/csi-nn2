@@ -111,10 +111,20 @@ choice
     depends on BUILD_RISCV_ELF
 	default BUILD_RISCV_ELF_C906
 
+config BUILD_RISCV_ELF_RVV
+	bool "RISC-V V elf"
+	help
+	    Build RISC-V V bare-metal static library
+
 config BUILD_RISCV_ELF_C906
 	bool "C906 elf"
 	help
 	    Build C906 V static library
+
+config BUILD_RISCV_ELF_RVM
+	bool "RVM elf"
+	help
+	    Build RISC-V vector and matrix bare-metal static library
 
 config BUILD_RISCV_ELF_E907
 	bool "e907 elf"

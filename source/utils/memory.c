@@ -128,13 +128,8 @@ void *shl_mem_alloc_aligned(int64_t size, int aligned_bytes)
 #ifdef SHL_BUILD_RTOS
     size_t real_size = size + aligned_bytes;
     void *tptr = shl_mem_alloc(real_size);
-#ifdef SHL_BUILD_C906
-    long mask = ~(aligned_bytes - 1);
-    long addr = ((long)tptr + aligned_bytes) & mask;
-#else
-    int mask = ~(aligned_bytes - 1);
-    int addr = ((int)tptr + aligned_bytes) & mask;
-#endif
+    uintptr_t mask = ~((uintptr_t)aligned_bytes - 1);
+    uintptr_t addr = ((uintptr_t)tptr + aligned_bytes) & mask;
     ptr = (void *)addr;
 #else
     if (aligned_bytes == 0) {

@@ -22,7 +22,17 @@
 #include "rvv/rvv.h"
 
 #ifdef __riscv_xtheadmatrix
+#if defined(__has_include)
+#if __has_include(<riscv_matrix.h>)
 #include <riscv_matrix.h>
+#elif __has_include(<thead_matrix.h>)
+#include <thead_matrix.h>
+#else
+#error "Matrix intrinsic header is missing"
+#endif
+#else
+#include <riscv_matrix.h>
+#endif
 #define MATRIX_PW_I32  // requantize inst: enable
 #endif                 // __riscv_xtheadmatrix
 

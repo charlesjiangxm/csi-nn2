@@ -22,6 +22,24 @@
 #if __riscv_vector
 #include <riscv_vector.h>
 
+#if defined(__riscv_v_intrinsic) && (__riscv_v_intrinsic > 10000)
+#define SHL_RVV_SAVED_V_INTRINSIC __riscv_v_intrinsic
+#undef __riscv_v_intrinsic
+#define __riscv_v_intrinsic 10000
+#include <riscv_vector_v0p10.h>
+#undef __riscv_v_intrinsic
+#define __riscv_v_intrinsic SHL_RVV_SAVED_V_INTRINSIC
+#undef SHL_RVV_SAVED_V_INTRINSIC
+#elif defined(__riscv_th_v_intrinsic) && (__riscv_th_v_intrinsic > 10000)
+#define SHL_RVV_SAVED_TH_V_INTRINSIC __riscv_th_v_intrinsic
+#undef __riscv_th_v_intrinsic
+#define __riscv_th_v_intrinsic 10000
+#include <riscv_vector_v0p10.h>
+#undef __riscv_th_v_intrinsic
+#define __riscv_th_v_intrinsic SHL_RVV_SAVED_TH_V_INTRINSIC
+#undef SHL_RVV_SAVED_TH_V_INTRINSIC
+#endif
+
 #if (__riscv_v == 1000000)
 #define RVV_1_0_0
 #elif (__riscv_v == 7000)

@@ -27,9 +27,11 @@
 #include "shl_node.h"
 #include "shl_utils.h"
 
+typedef int32_t (*shl_tvmgen_func)();
+
 struct shl_tvmgen_name_func {
-    char *name;
-    int (*ptr)();
+    const char *name;
+    shl_tvmgen_func ptr;
     enum csinn_optimize_method_enum opt_method;
 };
 
@@ -40,7 +42,7 @@ struct shl_tvmgen_resource_handle {
 
 int shl_tvmgen_layer_func(struct shl_node *node);
 
-int shl_tvmgen_map_reg(struct shl_tvmgen_name_func *map, int size);
-void *shl_tvmgen_find_reg(char *name, enum csinn_optimize_method_enum *opt_method);
+int shl_tvmgen_map_reg(const struct shl_tvmgen_name_func *map, int size);
+void *shl_tvmgen_find_reg(const char *name, enum csinn_optimize_method_enum *opt_method);
 
 #endif  // INCLUDE_SHL_TVMGEN_H_

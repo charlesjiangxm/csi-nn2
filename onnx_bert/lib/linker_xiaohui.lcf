@@ -1,0 +1,163 @@
+/*
+ * Copyright (C) 2017-2019 Alibaba Group Holding Limited
+ */
+
+/******************************************************************************
+ * @file     linker_xiaohui.lcf
+ * @brief    C907 xiaohui simulator linker file
+ * @version  V1.0
+ ******************************************************************************/
+MEMORY
+{
+  DRAM   : ORIGIN = 0x50000000, LENGTH = 0x40000000 /* xiaohui dram 1GB */
+}
+
+__min_heap_size = 0x200;
+__kernel_stack_0 = 0x8ffffff8;
+__kernel_stack_1 = 0x8fffeff8;
+__kernel_stack_2 = 0x8fffdff8;
+__kernel_stack_3 = 0x8fffcff8;
+
+PROVIDE (__ram_end  = 0x90000000 - 0x8);
+PROVIDE (__heap_end = __ram_end);
+
+REGION_ALIAS("REGION_TEXT",    DRAM);
+REGION_ALIAS("REGION_RODATA",  DRAM);
+REGION_ALIAS("REGION_DATA",    DRAM);
+REGION_ALIAS("REGION_BSS",     DRAM);
+
+ENTRY(__start)
+PHDRS
+{
+  load PT_LOAD;
+}
+SECTIONS
+{
+ .text : {
+  . = ALIGN(0x8) ;
+  __stext = . ;
+  KEEP(*crt0.o(*.text*))
+  KEEP(*crt0.o(*.vectors*))
+  *(.text)
+  *(.text*)
+  *(.text.*)
+  *(.gnu.warning)
+  *(.stub)
+  *(.gnu.linkonce.t*)
+  *(.glue_7t)
+  *(.glue_7)
+  *(.jcr)
+  KEEP (*(.init))
+  KEEP (*(.fini))
+  . = ALIGN (4) ;
+  PROVIDE(__ctbp = .);
+  *(.call_table_data)
+  *(.call_table_text)
+  . = ALIGN(0x10) ;
+  __etext = . ;
+ } > REGION_TEXT :load
+ .eh_frame_hdr : {
+  *(.eh_frame_hdr)
+ } > REGION_TEXT :load
+ .eh_frame : ONLY_IF_RO {
+  KEEP (*(.eh_frame))
+ } > REGION_TEXT :load
+ .gcc_except_table : ONLY_IF_RO {
+  *(.gcc_except_table .gcc_except_table.*)
+ } > REGION_TEXT :load
+ .rodata : {
+  . = ALIGN(0x8) ;
+  __srodata = .;
+  *(.rdata)
+  *(.rdata*)
+  *(.rdata1)
+  *(.rdata.*)
+  *(.rodata)
+  *(.rodata1)
+  *(.rodata*)
+  *(.rodata.*)
+  *(.rodata.str1.4)
+  *(.srodata*)
+  . = ALIGN(0x8) ;
+  __ctor_start__ = .;
+  KEEP (*(SORT(.ctors.*)))
+  KEEP (*(.ctors))
+  __ctor_end__ = .;
+  KEEP (*(SORT(.dtors.*)))
+  KEEP (*(.dtors))
+  __dtor_end__ = .;
+  . = ALIGN(0x8) ;
+  __erodata = .;
+  __rodata_end__ = .;
+ } > REGION_RODATA :load
+ .data : {
+  . = ALIGN(0x8) ;
+  __sdata = . ;
+  __data_start__ = . ;
+  data_start = . ;
+  *(.got.plt)
+  *(.got)
+  *(.gnu.linkonce.r*)
+  *(.data)
+  *(.data*)
+  *(.data1)
+  *(.data.*)
+  *(.gnu.linkonce.d*)
+  *(.data1)
+  *(.gcc_except_table)
+  *(.gcc_except_table*)
+  __start_init_call = .;
+  *(.initcall.init)
+  __stop_init_call = .;
+  __start_cmd = .;
+  *(.bootloaddata.cmd)
+  . = ALIGN(4) ;
+  __stop_cmd = .;
+  __global_pointer$ = .;
+  *(.sdata)
+  *(.sdata.*)
+  *(.sdata2.*)
+  *(.gnu.linkonce.s.*)
+  *(__libc_atexit)
+  *(__libc_subinit)
+  *(__libc_subfreeres)
+  *(.note.ABI-tag)
+  __edata = .;
+  __data_end__ = .;
+  . = ALIGN(0x8) ;
+ } > REGION_DATA :load
+ .eh_frame : ONLY_IF_RW {
+  KEEP (*(.eh_frame))
+ } > REGION_DATA :load
+ .gcc_except_table : ONLY_IF_RW {
+  *(.gcc_except_table .gcc_except_table.*)
+  __edata = .;
+  __data_end__ = .;
+ } > REGION_DATA :load
+ .bss : {
+  . = ALIGN(0x8) ;
+  __sbss = ALIGN(0x8) ;
+  __bss_start__ = . ;
+  *(.dynsbss)
+  *(.sbss)
+  *(.sbss.*)
+  *(.scommon)
+  *(.dynbss)
+  *(.bss)
+  *(.bss.*)
+  *(COMMON)
+  . = ALIGN(0x8) ;
+  __ebss = . ;
+  __bss_end__ = .;
+  __end = . ;
+  end = . ;
+ } > REGION_BSS :load
+ ._user_heap (NOLOAD): {
+  . = ALIGN(0x8) ;
+  *(.stack*)
+  . = ALIGN(0x8) ;
+  __heap_start = .;
+  . += __min_heap_size;
+  . = ALIGN(0x8) ;
+ } > REGION_BSS :NONE
+}

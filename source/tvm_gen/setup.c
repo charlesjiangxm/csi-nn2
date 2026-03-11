@@ -22,19 +22,19 @@
 
 struct shl_tvmgen_name_func_map {
     int size;
-    struct shl_tvmgen_name_func *reg;
+    const struct shl_tvmgen_name_func *reg;
 };
 
 static struct shl_tvmgen_name_func_map name_func_map;
 
-int shl_tvmgen_map_reg(struct shl_tvmgen_name_func *map, int size)
+int shl_tvmgen_map_reg(const struct shl_tvmgen_name_func *map, int size)
 {
     name_func_map.size = size;
     name_func_map.reg = map;
     return CSINN_TRUE;
 }
 
-void *shl_tvmgen_find_reg(char *name, enum csinn_optimize_method_enum *opt_method)
+void *shl_tvmgen_find_reg(const char *name, enum csinn_optimize_method_enum *opt_method)
 {
     if (name == NULL) {
         return NULL;

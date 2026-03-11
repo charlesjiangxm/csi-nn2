@@ -13,6 +13,11 @@ tests/**/*.elf
 example/*.o
 example/*.elf
 
+# large onnx_bert assets
+onnx_bert/bert_small_int32_input.onnx
+onnx_bert/model.params
+onnx_bert/model.params.xz
+
 # default build dir
 openvx_build
 e907_build

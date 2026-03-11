@@ -325,6 +325,36 @@ void *shl_rvm_runtime_callback(int api)
 
 void shl_target_init_rvm()
 {
+#if defined(SHL_RVM_ELF_FALLBACK_ONLY)
+    shl_rvm_reg_op(CSINN_DTYPE_FLOAT32, CSINN_OP_CONV2D, NULL, NULL, shl_gref_conv2d);
+    shl_rvm_reg_op(CSINN_DTYPE_FLOAT16, CSINN_OP_CONV2D, NULL, NULL, shl_gref_conv2d);
+    shl_rvm_reg_op(CSINN_DTYPE_INT8, CSINN_OP_CONV2D, NULL, NULL, shl_gref_conv2d);
+
+    shl_rvm_reg_op(CSINN_DTYPE_FLOAT32, CSINN_OP_DEPTHWISE_CONV2D, NULL, NULL,
+                   shl_gref_depthwise_conv2d);
+    shl_rvm_reg_op(CSINN_DTYPE_FLOAT16, CSINN_OP_DEPTHWISE_CONV2D, NULL, NULL,
+                   shl_gref_depthwise_conv2d);
+    shl_rvm_reg_op(CSINN_DTYPE_INT8, CSINN_OP_DEPTHWISE_CONV2D, NULL, NULL,
+                   shl_gref_depthwise_conv2d);
+
+    shl_rvm_reg_op(CSINN_DTYPE_INT8, CSINN_OP_CONV2D_RELU, NULL, NULL, shl_gref_conv2d_relu);
+    shl_rvm_reg_op(CSINN_DTYPE_INT8, CSINN_OP_DEPTHWISE_CONV2D_RELU, NULL, NULL,
+                   shl_gref_depthwise_conv2d_relu);
+    shl_rvm_reg_op(CSINN_DTYPE_INT8, CSINN_OP_CONV2D_RELU6, NULL, NULL, shl_gref_conv2d_relu6);
+    shl_rvm_reg_op(CSINN_DTYPE_INT8, CSINN_OP_DEPTHWISE_CONV2D_RELU6, NULL, NULL,
+                   shl_gref_depthwise_conv2d_relu6);
+
+    shl_rvm_reg_op(CSINN_DTYPE_FLOAT32, CSINN_OP_FULLYCONNECTED, NULL, NULL,
+                   shl_gref_fullyconnected);
+    shl_rvm_reg_op(CSINN_DTYPE_FLOAT16, CSINN_OP_FULLYCONNECTED, NULL, NULL,
+                   shl_gref_fullyconnected);
+    shl_rvm_reg_op(CSINN_DTYPE_INT8, CSINN_OP_FULLYCONNECTED, NULL, NULL,
+                   shl_gref_fullyconnected);
+
+    shl_rvm_reg_op(CSINN_DTYPE_FLOAT32, CSINN_OP_MATMUL, NULL, NULL, shl_gref_matmul);
+    shl_rvm_reg_op(CSINN_DTYPE_FLOAT16, CSINN_OP_MATMUL, NULL, NULL, shl_gref_matmul);
+    shl_rvm_reg_op(CSINN_DTYPE_INT8, CSINN_OP_MATMUL, NULL, NULL, shl_gref_matmul);
+#else
     shl_rvm_reg_op(CSINN_DTYPE_FLOAT16, CSINN_OP_CONV2D, shl_rvm_conv2d_init_fp16, NULL,
                    shl_gref_conv2d);
     shl_rvm_reg_op(CSINN_DTYPE_INT8, CSINN_OP_CONV2D, shl_rvm_conv2d_init_int8, NULL,
@@ -353,6 +383,7 @@ void shl_target_init_rvm()
                    shl_gref_matmul);
     shl_rvm_reg_op(CSINN_DTYPE_INT8, CSINN_OP_MATMUL, shl_rvm_matmul_init_int8, NULL,
                    shl_gref_matmul);
+#endif
 
     shl_register_op_callback(CSINN_RVM, shl_cb_map_rvm);
     shl_register_runtime_callback(CSINN_RVM, shl_rvm_runtime_callback);
